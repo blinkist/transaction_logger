@@ -1,4 +1,5 @@
-# TransactionLogger
+# Blinkist TransactionLogger
+[ ![Codeship Status for blinkist/transaction_logger](https://codeship.com/projects/fb9745c0-edc7-0132-b6b1-1efd3f886df2/status?branch=master)](https://codeship.com/projects/84119) [![Code Climate](https://codeclimate.com/github/blinkist/transaction_logger/badges/gpa.svg)](https://codeclimate.com/github/blinkist/transaction_logger)
 
 Business Transactions Logger for Ruby
 
