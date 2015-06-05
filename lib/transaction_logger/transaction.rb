@@ -67,7 +67,7 @@ class TransactionLogger::Transaction
   end
 
   def print_transactions(transaction=nil)
-    self.class.logger.error to_hash
+    TransactionLogger.logger.error to_hash
   end
 
   def to_hash
@@ -79,7 +79,7 @@ class TransactionLogger::Transaction
     }
 
     @log_queue.each {|entry|
-      if entry.is_a? TransactionLogger
+      if entry.is_a? TransactionLogger::Transaction
         output[:transaction_history] << entry.to_hash
       elsif entry.is_a? Hash
         output[:transaction_history] << entry
