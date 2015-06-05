@@ -6,9 +6,9 @@ Business Transactions Logger for Ruby
 
 Add this line to your application's Gemfile:
 
-    ```ruby
-    gem 'transaction_logger'
-    ```
+```ruby
+gem 'transaction_logger'
+```
 
 And then execute:
 
@@ -22,10 +22,10 @@ Or install it yourself as:
 
 You may configure the logger by calling TransactionLogger.logger, such as with Ruby's Logger:
 
-    ```ruby
-    logger = LogglyLogger.new
-    TransactionLogger.logger = logger
-    ```
+```ruby
+logger = LogglyLogger.new
+TransactionLogger.logger = logger
+```
 
 Once you configure an appropriate logger, you may use the class anywhere to begin logging.
 
@@ -33,28 +33,28 @@ Wrap a business transaction method with a TransactionLogger lamnda.
 
 Your method:
 
-    ```ruby
-    def some_method
-      # your code
-    end
-    ```
+```ruby
+def some_method
+  # your code
+end
+```
 
 Your method wrapped with a TransactionLogger lamnda
 
-    ```ruby
-    def some_method
-      TransactionLogger.start -> (t) do
-        # your code.
-      end
-    end
-    ```
+```ruby
+def some_method
+  TransactionLogger.start -> (t) do
+    # your code.
+  end
+end
+```
 
 From within this lamnda, you may call upon t to add a custom name, context and log your messages, like so:
 
-    ```ruby
-    t.context = { specific: "context: #{value}" }
-    t.log "A message you want logged"
-    ```
+```ruby
+t.context = { specific: "context: #{value}" }
+t.log "A message you want logged"
+```
 
 ## Contributing
 
