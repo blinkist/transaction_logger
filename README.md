@@ -46,23 +46,70 @@ t.context = { specific: "context: #{value}" }
 t.log "A message you want logged"
 ```
 
+### Example
+
+Here is a transaction that calls another transaction, which raises an error:
+
+```ruby
+class ExampleClass
+  def some_method
+    TransactionLogger.start -> (t) do
+      t.name = "ExampleClass.some_method"
+      t.context = { some_id: 12 }
+
+      t.log "Trying another transaction"
+      result = nested_method
+
+      result
+      t.log "Success"
+    end
+  end
+
+  def nested_method
+    TransactionLogger.start -> (t) do
+      t.name = "ExampleClass.nested_method"
+      t.context = { current_conditions: "fair" }
+
+      t.log "Trying something complex"
+      raise RuntimeError, "Error"
+
+      t.log "Transaction succeeded!"
+      true
+    end
+  end
+end
+```
+
 The expected output is:
 
 ```json
 {
-    "transaction_name": "undefined",
-    "transaction_context": {},
-    "transaction_duration": 0.081,
+    "transaction_name": "ExampleClass.some_method",
+    "transaction_context": {
+        "some_id": 12
+    },
+    "transaction_duration": 0.112,
     "transaction_history": [{
-        "transaction_error_message": "test error",
-        "transaction_error_class": "RuntimeError",
-        "transaction_error_backtrace": [
-            "/Users/jdonner94/Documents/CODING/blinkist/transaction_logger/spec/transaction_logger_spec.rb:108:in `block (5 levels) in <top (required)>'",
-            "/Users/jdonner94/Documents/CODING/blinkist/transaction_logger/lib/transaction_logger/transaction.rb:22:in `call'",
-            "/Users/jdonner94/Documents/CODING/blinkist/transaction_logger/lib/transaction_logger/transaction.rb:22:in `run'",
-            "/Users/jdonner94/Documents/CODING/blinkist/transaction_logger/spec/transaction_logger_spec.rb:112:in `block (4 levels) in <top (required)>'",
-            "/Users/jdonner94/.rvm/rubies/ruby-2.1.2/lib/ruby/gems/2.1.0/gems/rspec-core-3.2.3/lib/rspec/core/memoized_helpers.rb:242:in `block (2 levels) in let'"
-        ]
+        "transaction_info": "Trying another transaction"
+        }, {
+        "transaction_name": "ExampleClass.nested_method",
+        "transaction_context": {
+            "current_conditions": "fair"
+        },
+        "transaction_duration": 0.082,
+        "transaction_history": [{
+            "transaction_info": "Trying something complex"
+        }, {
+            "transaction_error_message": "Error",
+            "transaction_error_class": "RuntimeError",
+            "transaction_error_backtrace": [
+                "example.rb:84:in `block in nested_method'",
+                ".../TransactionLogger_Example/transaction_logger.rb:26:in `call'",
+                ".../TransactionLogger_Example/transaction_logger.rb:26:in `run'",
+                ".../TransactionLogger_Example/transaction_logger.rb:111:in `start'",
+                "example.rb:79:in `nested_method'"
+            ]
+        }]
     }]
 }
 ```
