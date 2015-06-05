@@ -1,0 +1,10 @@
+--title "Transaction Logger (by Blinkist)"
+--charset utf-8
+--no-private
+--hide-void-return
+
+--markup-provider redcarpet
+--markup markdown
+
+lib/transaction_logger/**/*.rb
+README.md
