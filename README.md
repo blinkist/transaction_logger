@@ -24,13 +24,13 @@ Or install it yourself as:
 You may configure the logger by calling TransactionLogger.logger, such as with Ruby's Logger:
 
 ```ruby
-logger = LogglyLogger.new
+logger = Logger.new STDOUT
 TransactionLogger.logger = logger
 ```
 
 Once you configure an appropriate logger, you may use the class anywhere to begin logging.
 
-Wrap a business transaction method with a TransactionLogger lamnda:
+Wrap a business transaction method with a TransactionLogger lambda:
 
 ```ruby
 def some_method
@@ -40,7 +40,7 @@ def some_method
 end
 ```
 
-From within this lamnda, you may call upon t to add a custom name, context and log your messages, like so:
+From within this lambda, you may call upon t to add a custom name, context and log your messages, like so:
 
 ```ruby
 t.context = { specific: "context: #{value}" }
