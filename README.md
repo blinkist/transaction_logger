@@ -29,17 +29,7 @@ TransactionLogger.logger = logger
 
 Once you configure an appropriate logger, you may use the class anywhere to begin logging.
 
-Wrap a business transaction method with a TransactionLogger lamnda.
-
-Your method:
-
-```ruby
-def some_method
-  # your code
-end
-```
-
-Your method wrapped with a TransactionLogger lamnda
+Wrap a business transaction method with a TransactionLogger lamnda:
 
 ```ruby
 def some_method
