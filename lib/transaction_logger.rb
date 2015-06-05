@@ -2,6 +2,7 @@ require "transaction_logger/version"
 require "transaction_logger/transaction"
 
 class TransactionLogger
+
   @@current_transactions = {}
 
   def self.start(lmbda)
