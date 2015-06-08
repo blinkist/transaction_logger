@@ -30,7 +30,7 @@ When a transaction raises an error, it will log the *error message*, *error clas
 Configure the logger by calling TransactionLogger.logger, such as with Ruby's Logger:
 
 ```ruby
-logger = Logger.new STDOUT
+logger = Logger.new STDOUT # Ruby default logger setup
 TransactionLogger.logger = logger
 ```
 
