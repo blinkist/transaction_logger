@@ -19,6 +19,12 @@ Or install it yourself as:
 
     $ gem install transaction_logger
 
+## Output
+
+Given a root transaction, the TransactionLogger is expected to print out every log that occurred under this root transaction, and each sub-transaction's local information.
+
+When a transaction raises an error, it will log the *error message*, *error class*, and *10 lines* of the backtrace by default. This will be logged at the level of the transaction that raised the error.
+
 ## Usage
 
 Configure the logger by calling TransactionLogger.logger, such as with Ruby's Logger:
@@ -48,7 +54,7 @@ t.log "A message you want logged"
 
 ### Example
 
-Here is a transaction that calls another transaction, which raises an error:
+Here is a transaction that raises an error:
 
 ```ruby
 class ExampleClass
@@ -57,24 +63,11 @@ class ExampleClass
       t.name = "ExampleClass.some_method"
       t.context = { some_id: 12 }
 
-      t.log "Trying another transaction"
-      result = nested_method
-
-      result
-      t.log "Success"
-    end
-  end
-
-  def nested_method
-    TransactionLogger.start -> (t) do
-      t.name = "ExampleClass.nested_method"
-      t.context = { current_conditions: "fair" }
-
       t.log "Trying something complex"
       raise RuntimeError, "Error"
 
-      t.log "Transaction succeeded!"
-      true
+      result
+      t.log "Success"
     end
   end
 end
@@ -84,33 +77,25 @@ The expected output is:
 
 ```json
 {
-    "transaction_name": "ExampleClass.some_method",
-    "transaction_context": {
-        "some_id": 12
-    },
-    "transaction_duration": 0.112,
-    "transaction_history": [{
-        "transaction_info": "Trying another transaction"
-        }, {
-        "transaction_name": "ExampleClass.nested_method",
-        "transaction_context": {
-            "current_conditions": "fair"
-        },
-        "transaction_duration": 0.082,
-        "transaction_history": [{
-            "transaction_info": "Trying something complex"
-        }, {
-            "transaction_error_message": "Error",
-            "transaction_error_class": "RuntimeError",
-            "transaction_error_backtrace": [
-                "example.rb:84:in `block in nested_method'",
-                ".../TransactionLogger_Example/transaction_logger.rb:26:in `call'",
-                ".../TransactionLogger_Example/transaction_logger.rb:26:in `run'",
-                ".../TransactionLogger_Example/transaction_logger.rb:111:in `start'",
-                "example.rb:79:in `nested_method'"
-            ]
-        }]
-    }]
+  "transaction_name": "ExampleClass.some_method",
+  "transaction_context": {
+    "some_id": 12
+  },
+  "transaction_duration": 0.112,
+  "transaction_history": [{
+    "transaction_info": "Trying something complex"
+    }, {
+      "transaction_error_message": "Error",
+      "transaction_error_class": "RuntimeError",
+      "transaction_error_backtrace": [
+        "example.rb:84:in `block in nested_method'",
+        ".../TransactionLogger_Example/transaction_logger.rb:26:in `call'",
+        ".../TransactionLogger_Example/transaction_logger.rb:26:in `run'",
+        ".../TransactionLogger_Example/transaction_logger.rb:111:in `start'",
+        "example.rb:79:in `nested_method'"
+      ]
+
+  }]
 }
 ```
 
