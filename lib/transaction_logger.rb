@@ -5,6 +5,8 @@ class TransactionLogger
 
   @@current_transactions = {}
 
+  # Starts Transaction and runs new instance
+  # 
   def self.start(lmbda)
 
     active_transaction = get_active_transaction
