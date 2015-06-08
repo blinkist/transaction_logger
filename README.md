@@ -8,7 +8,7 @@ Business Transactions Logger for Ruby that compiles contextual logging informati
 Add this line to your application's Gemfile:
 
 ```ruby
-gem 'transaction_logger'
+gem "transaction_logger"
 ```
 
 And then execute:
