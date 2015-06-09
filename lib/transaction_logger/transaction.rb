@@ -22,12 +22,7 @@ class TransactionLogger::Transaction
   end
 
   # @private
-  #
   # Runs the lines of code from within the lambda. FOR INTERNAL USE ONLY.
-  #
-  # @param lmbda [Proc]
-  #
-  # @return [something] the calling method's return
   #
   def run
     begin
@@ -48,9 +43,13 @@ class TransactionLogger::Transaction
     result
   end
 
-  # Pushes a message into the log queue
+  # Pushes a message into the log queue. Logs are stored in order
+  #   of time logged. Note that this method will not output a log, but just
+  #   stores it in the queue to be outputted if an error is raised in a
+  #   transaction.
   #
-  # @param message [String] Message you want to log
+  # @param message [#to_s] Any String or Object that responds to to_s
+  #   that you want to be stored in the log queue.
   #
   def log(message)
     if message.is_a? String
@@ -62,14 +61,7 @@ class TransactionLogger::Transaction
   end
 
   # @private
-  #
   # Logs the error and raises error to the parent process
-  #
-  # @param error [Exception]
-  # @param transaction [TransactionLogger:Transaction]
-  #
-  # @raise [Exception]
-  #
   def failure(error, transaction)
     calc_duration
 
@@ -86,11 +78,7 @@ class TransactionLogger::Transaction
   end
 
   # @private
-  #
   # Converts a Transaction and it's children into a single nested hash
-  #
-  # @return [Hash] the log, error and contextual information
-  #
   def to_hash
     output = {
       transaction_name: @name,
@@ -121,15 +109,11 @@ class TransactionLogger::Transaction
   end
 
   # Calculates the number of milliseconds that the Transaction has taken
-  #
   def calc_duration
     @duration = (Time.now - @start) * 1000.0
   end
 
   # Sends the transaction context and log to an instance of logger
-  #
-  # @param transaction [TransactionLogger::Transaction]
-  #
   def print_transactions(transaction=nil)
     TransactionLogger.logger.error to_hash
   end
