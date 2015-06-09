@@ -4,6 +4,8 @@ class TransactionLogger::Transaction
   attr_accessor :name
   attr_accessor :context
 
+  # @param parent [TransactionLogger::Transaction]
+  #
   def initialize(parent=nil)
     @parent = parent
     @parent.log self if @parent
@@ -15,6 +17,12 @@ class TransactionLogger::Transaction
     @error_printed = nil
   end
 
+  # Runs the lines of code from within the lambda.
+  #
+  # @param lmbda [Proc]
+  #
+  # @return [something] the calling method's return
+  #
   def run(lmbda)
     begin
       result = lmbda.call self
@@ -34,10 +42,21 @@ class TransactionLogger::Transaction
     result
   end
 
+  # Calculates the duration upon the success of a transaction
+  #
+  # @param transaction [TransactionLogger::Transaction]
+  #
   def success(transaction)
     calc_duration
   end
 
+  # Logs the error and raises error to the parent process
+  #
+  # @param error [Exception]
+  # @param transaction [TransactionLogger:Transaction]
+  #
+  # @raise [Exception]
+  #
   def failure(error, transaction)
     calc_duration
 
@@ -53,6 +72,10 @@ class TransactionLogger::Transaction
     end
   end
 
+  # Pushes a message into the log queue
+  #
+  # @param message [String] Typically a String
+  #
   def log(message)
     if message.is_a? String
       message = { transaction_info: message }
@@ -62,14 +85,24 @@ class TransactionLogger::Transaction
     end
   end
 
+  # Calculates the number of milliseconds that the Transaction has taken
+  #
   def calc_duration
     @duration = (Time.now - @start) * 1000.0
   end
 
+  # Sends the transaction context and log to an instance of logger
+  #
+  # @param transaction [TransactionLogger::Transaction]
+  #
   def print_transactions(transaction=nil)
     TransactionLogger.logger.error to_hash
   end
 
+  # Converts a Transaction and it's children into a single nested hash
+  #
+  # @return [Hash] the log, error and contextual information
+  #
   def to_hash
     output = {
       transaction_name: @name,

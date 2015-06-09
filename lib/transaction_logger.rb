@@ -6,6 +6,8 @@ class TransactionLogger
   @@current_transactions = {}
 
   # Starts Transaction and runs new instance
+  #
+  # @param lmbda [Proc]
   # 
   def self.start(lmbda)
 
