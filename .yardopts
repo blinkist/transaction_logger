@@ -6,5 +6,5 @@
 --markup-provider redcarpet
 --markup markdown
 
-lib/transaction_logger/**/*.rb
+lib/**/*.rb
 README.md
