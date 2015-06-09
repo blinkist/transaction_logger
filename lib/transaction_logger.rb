@@ -7,8 +7,8 @@ class TransactionLogger
 
   # Starts Transaction and runs new instance
   #
-  # @param lmbda [Proc]
-  # 
+  # @param lmbda [Proc] 
+  #
   def self.start(lmbda)
 
     active_transaction = get_active_transaction
