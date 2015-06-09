@@ -2,7 +2,13 @@ require "spec_helper"
 require "logger"
 
 describe TransactionLogger do
-  subject { TransactionLogger::Transaction.new }
+
+  let (:test_lmbda) {
+    -> (t) do
+    end
+  }
+
+  subject { TransactionLogger::Transaction.new nil, test_lmbda }
 
   it "initializes with a nil parent" do
     expect(subject.parent).to be_nil
@@ -16,7 +22,7 @@ describe TransactionLogger do
   context "when there is a parent" do
 
     let (:test_parent) { subject }
-    let (:child) { child = TransactionLogger::Transaction.new test_parent }
+    let (:child) { child = TransactionLogger::Transaction.new test_parent, test_lmbda }
     let (:test_parent_log_queue) { test_parent.instance_variable_get(:@log_queue) }
 
     it "has a parent" do
@@ -75,9 +81,9 @@ describe TransactionLogger do
 
   describe ".start" do
 
-    let (:test_lmda) {
+    let (:test_lmbda) {
       described_class.start -> (t) do
-        t.log
+        t.log ""
       end
     }
 
@@ -87,13 +93,13 @@ describe TransactionLogger do
 
     context "when no exception is raised" do
 
-      let (:test_lmda) {
+      let (:test_lmbda) {
         -> (t) do
           "result"
         end
       }
 
-      let (:result) { subject.run test_lmda }
+      let (:result) { subject.run }
 
       it "returns lmda" do
         expect(result).to eq "result"
@@ -103,13 +109,13 @@ describe TransactionLogger do
 
     context "when an exception is raised" do
 
-      let (:test_lmda) {
+      let (:test_lmbda) {
         -> (t) do
           fail RuntimeError, "test error"
         end
       }
 
-      let (:result) { subject.run test_lmda }
+      let (:result) { subject.run }
 
       it "raises an exception" do
         expect{result}.to raise_error "test error"

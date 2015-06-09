@@ -5,17 +5,21 @@ class TransactionLogger
 
   @@current_transactions = {}
 
+  # Starts Transaction and runs new instance
+  #
+  # @param lmbda [Proc]
+  #
   def self.start(lmbda)
 
     active_transaction = get_active_transaction
 
-    transaction = TransactionLogger::Transaction.new active_transaction
+    transaction = TransactionLogger::Transaction.new active_transaction, lmbda
     active_transaction = transaction
 
     set_active_transaction active_transaction
 
     begin
-      transaction.run lmbda
+      transaction.run
     rescue Exception => e
       raise e
     ensure
