@@ -1,14 +1,18 @@
+
 class TransactionLogger::Transaction
   attr_reader :parent
 
   attr_accessor :name
   attr_accessor :context
 
-  # @param parent [TransactionLogger::Transaction]
+  # @param parent [TransactionLogger::Transaction] Parent of transaction
+  # @param lmbda [Proc] The surrounded block
   #
-  def initialize(parent=nil)
+  def initialize(parent=nil, lmbda)
     @parent = parent
     @parent.log self if @parent
+
+    @lmbda = lmbda
 
     @name = "undefined"
     @context = {}
@@ -17,15 +21,17 @@ class TransactionLogger::Transaction
     @error_printed = nil
   end
 
-  # Runs the lines of code from within the lambda.
+  # @private
+  #
+  # Runs the lines of code from within the lambda. FOR INTERNAL USE ONLY.
   #
   # @param lmbda [Proc]
   #
   # @return [something] the calling method's return
   #
-  def run(lmbda)
+  def run
     begin
-      result = lmbda.call self
+      result = @lmbda.call self
     rescue => error
 
       log({
@@ -36,20 +42,27 @@ class TransactionLogger::Transaction
 
       failure error, self
     else
-      success self
+      success
     end
 
     result
   end
 
-  # Calculates the duration upon the success of a transaction
+  # Pushes a message into the log queue
   #
-  # @param transaction [TransactionLogger::Transaction]
+  # @param message [String] Message you want to log
   #
-  def success(transaction)
-    calc_duration
+  def log(message)
+    if message.is_a? String
+      message = { transaction_info: message }
+      @log_queue.push message
+    else
+      @log_queue.push message
+    end
   end
 
+  # @private
+  #
   # Logs the error and raises error to the parent process
   #
   # @param error [Exception]
@@ -72,33 +85,8 @@ class TransactionLogger::Transaction
     end
   end
 
-  # Pushes a message into the log queue
+  # @private
   #
-  # @param message [String] Typically a String
-  #
-  def log(message)
-    if message.is_a? String
-      message = { transaction_info: message }
-      @log_queue.push message
-    else
-      @log_queue.push message
-    end
-  end
-
-  # Calculates the number of milliseconds that the Transaction has taken
-  #
-  def calc_duration
-    @duration = (Time.now - @start) * 1000.0
-  end
-
-  # Sends the transaction context and log to an instance of logger
-  #
-  # @param transaction [TransactionLogger::Transaction]
-  #
-  def print_transactions(transaction=nil)
-    TransactionLogger.logger.error to_hash
-  end
-
   # Converts a Transaction and it's children into a single nested hash
   #
   # @return [Hash] the log, error and contextual information
@@ -122,6 +110,28 @@ class TransactionLogger::Transaction
     }
 
     output
+  end
+
+
+  private
+
+  # Calculates the duration upon the success of a transaction
+  def success
+    calc_duration
+  end
+
+  # Calculates the number of milliseconds that the Transaction has taken
+  #
+  def calc_duration
+    @duration = (Time.now - @start) * 1000.0
+  end
+
+  # Sends the transaction context and log to an instance of logger
+  #
+  # @param transaction [TransactionLogger::Transaction]
+  #
+  def print_transactions(transaction=nil)
+    TransactionLogger.logger.error to_hash
   end
 
 end
