@@ -3,6 +3,7 @@ require "transaction_logger/transaction"
 
 class TransactionLogger
 
+  @@prefix = ""
   @@current_transactions = {}
 
   # Marks the beginning of a "Transaction lambda," which will log an error if the
@@ -51,6 +52,16 @@ class TransactionLogger
   #
   def self.logger
     @@logger ||= Logger.new(STDOUT)
+  end
+
+  #
+  #
+  def self.log_prefix(prefix)
+    @@prefix = "#{prefix}"
+  end
+
+  def self.get_log_prefix
+    @@prefix
   end
 
   # @private

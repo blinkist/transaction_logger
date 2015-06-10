@@ -80,12 +80,37 @@ describe TransactionLogger do
   end
 
   describe ".start" do
-
     let (:test_lmbda) {
       described_class.start -> (t) do
         t.log ""
       end
     }
+  end
+
+  describe ".log_prefix" do
+
+    context "when there is no prefix" do
+      it "the output name has no prefix" do
+        expect(subject.to_hash).to include(name: "undefined")
+      end
+    end
+
+    context "when a prefix is defined" do
+      let (:prefix) { "bta_" }
+
+      before :example do
+        described_class.log_prefix prefix
+      end
+
+      after :example do
+        described_class.log_prefix ""
+      end
+
+      it "the output name contains a prefix" do
+        described_class.log_prefix prefix
+        expect(subject.to_hash).to include(bta_name: "undefined")
+      end
+    end
 
   end
 
@@ -172,10 +197,10 @@ describe TransactionLogger do
 
       it "recieves error if an exception occurs" do
         expect(subject).to receive(:error) do |options|
-          expect(options[:transaction_history]).to include( {transaction_info: "First Message"} )
-          expect(options[:transaction_history].last[:transaction_history]).to include({transaction_info: "Second Message"})
-          expect(options[:transaction_history].last[:transaction_history].last[:transaction_error_message]).to eq("test error")
-          expect(options[:transaction_history].last[:transaction_history].last[:transaction_error_class]).to eq("RuntimeError")
+          expect(options[:history]).to include( {info: "First Message"} )
+          expect(options[:history].last[:history]).to include({info: "Second Message"})
+          expect(options[:history].last[:history].last[:error_message]).to eq("test error")
+          expect(options[:history].last[:history].last[:error_class]).to eq("RuntimeError")
         end
 
         expect {
@@ -197,10 +222,10 @@ describe TransactionLogger do
       it "recieves error if an exception occurs" do
 
         expect(subject).to receive(:error) do |options|
-          expect(options[:transaction_history].first[:transaction_history]).to include({transaction_info: "First Message"})
-          expect(options[:transaction_history].last[:transaction_history]).to include({transaction_info: "Second Message"})
-          expect(options[:transaction_history].last[:transaction_history].last[:transaction_error_message]).to eq("test error")
-          expect(options[:transaction_history].last[:transaction_history].last[:transaction_error_class]).to eq("RuntimeError")
+          expect(options[:history].first[:history]).to include({info: "First Message"})
+          expect(options[:history].last[:history]).to include({info: "Second Message"})
+          expect(options[:history].last[:history].last[:error_message]).to eq("test error")
+          expect(options[:history].last[:history].last[:error_class]).to eq("RuntimeError")
         end
 
         expect {
