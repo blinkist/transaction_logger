@@ -90,7 +90,7 @@ describe TransactionLogger do
   describe ".log_prefix" do
 
     context "when there is no prefix" do
-      it "the output name has no prefix" do
+      it "does not change the output" do
         expect(subject.to_hash).to include(name: "undefined")
       end
     end
@@ -106,7 +106,7 @@ describe TransactionLogger do
         described_class.log_prefix ""
       end
 
-      it "the output name contains a prefix" do
+      it "adds the prefix to every key" do
         described_class.log_prefix prefix
         expect(subject.to_hash).to include(bta_name: "undefined")
       end
