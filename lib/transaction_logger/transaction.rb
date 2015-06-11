@@ -29,9 +29,9 @@ class TransactionLogger::Transaction
       result = @lmbda.call self
     rescue => error
 
-      e_message_key = "#{TransactionLogger.get_log_prefix}error_message".to_sym
-      e_class_key = "#{TransactionLogger.get_log_prefix}error_class".to_sym
-      e_backtrace_key = "#{TransactionLogger.get_log_prefix}error_backtrace".to_sym
+      e_message_key = "#{TransactionLogger.log_prefix}error_message"
+      e_class_key = "#{TransactionLogger.log_prefix}error_class"
+      e_backtrace_key = "#{TransactionLogger.log_prefix}error_backtrace"
 
       log({
         e_message_key => error.message,
@@ -57,7 +57,7 @@ class TransactionLogger::Transaction
   #
   def log(message)
     if message.is_a? String
-      message_key = "#{TransactionLogger.get_log_prefix}info".to_sym
+      message_key = "#{TransactionLogger.log_prefix}info"
       message = { message_key => message }
       @log_queue.push message
     else
@@ -85,10 +85,10 @@ class TransactionLogger::Transaction
   # @private
   # Converts a Transaction and it's children into a single nested hash
   def to_hash
-    name_key = "#{TransactionLogger.get_log_prefix}name".to_sym
-    context_key = "#{TransactionLogger.get_log_prefix}context".to_sym
-    duration_key = "#{TransactionLogger.get_log_prefix}duration".to_sym
-    history_key = "#{TransactionLogger.get_log_prefix}history".to_sym
+    name_key = "#{TransactionLogger.log_prefix}name"
+    context_key = "#{TransactionLogger.log_prefix}context"
+    duration_key = "#{TransactionLogger.log_prefix}duration"
+    history_key = "#{TransactionLogger.log_prefix}history"
 
     output = {
       name_key => @name,

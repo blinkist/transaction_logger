@@ -56,11 +56,11 @@ class TransactionLogger
 
   #
   #
-  def self.log_prefix(prefix)
+  def self.log_prefix=(prefix)
     @@prefix = "#{prefix}"
   end
 
-  def self.get_log_prefix
+  def self.log_prefix
     @@prefix
   end
 
