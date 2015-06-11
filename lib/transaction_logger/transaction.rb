@@ -29,10 +29,14 @@ class TransactionLogger::Transaction
       result = @lmbda.call self
     rescue => error
 
+      e_message_key = "#{TransactionLogger.log_prefix}error_message"
+      e_class_key = "#{TransactionLogger.log_prefix}error_class"
+      e_backtrace_key = "#{TransactionLogger.log_prefix}error_backtrace"
+
       log({
-        transaction_error_message: error.message,
-        transaction_error_class: error.class.name,
-        transaction_error_backtrace: error.backtrace.take(5)
+        e_message_key => error.message,
+        e_class_key => error.class.name,
+        e_backtrace_key => error.backtrace.take(5)
       })
 
       failure error, self
@@ -53,7 +57,8 @@ class TransactionLogger::Transaction
   #
   def log(message)
     if message.is_a? String
-      message = { transaction_info: message }
+      message_key = "#{TransactionLogger.log_prefix}info"
+      message = { message_key => message }
       @log_queue.push message
     else
       @log_queue.push message
@@ -80,20 +85,25 @@ class TransactionLogger::Transaction
   # @private
   # Converts a Transaction and it's children into a single nested hash
   def to_hash
+    name_key = "#{TransactionLogger.log_prefix}name"
+    context_key = "#{TransactionLogger.log_prefix}context"
+    duration_key = "#{TransactionLogger.log_prefix}duration"
+    history_key = "#{TransactionLogger.log_prefix}history"
+
     output = {
-      transaction_name: @name,
-      transaction_context: @context,
-      transaction_duration: @duration,
-      transaction_history: []
+      name_key => @name,
+      context_key => @context,
+      duration_key => @duration,
+      history_key => []
     }
 
     @log_queue.each {|entry|
       if entry.is_a? TransactionLogger::Transaction
-        output[:transaction_history] << entry.to_hash
+        output[history_key] << entry.to_hash
       elsif entry.is_a? Hash
-        output[:transaction_history] << entry
+        output[history_key] << entry
       else
-        output[:transaction_history] << entry
+        output[history_key] << entry
       end
     }
 
