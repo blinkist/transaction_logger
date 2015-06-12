@@ -34,6 +34,19 @@ logger = Logger.new STDOUT # Ruby default logger setup
 TransactionLogger.logger = logger
 ```
 
+Calling Transaction_Logger.logger with no parameter sets the logger to a new instance of Logger as shown above.
+
+You can add a prefix to every hash key in the log by using the class method log_prefix:
+
+```ruby
+TransactionLogger.log_prefix = "transaction_logger_"
+# {
+#   "transaction_logger_name" => "undefined"
+#   "transaction_logger_context" => { "user_id" => 1 }
+#   ...
+# }
+```
+
 Wrap a business transaction method with a TransactionLogger lambda:
 
 ```ruby
@@ -53,6 +66,17 @@ t.log "A message you want logged"
 ```
 
 ### Example
+
+Initial setup, in a config file:
+
+```ruby
+# Sets output to new instance of Logger
+TransactionLogger.logger
+
+# Sets the prefix of each hash key in the log to "transaction_"
+#   eg. An error message has key: "transaction_error_message"
+TransactionLogger.log_prefix = "transaction_"
+```
 
 Here is a transaction that raises an error:
 
