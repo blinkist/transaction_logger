@@ -41,7 +41,7 @@ You can add a prefix to every hash key in the log by using the class method log_
 ```ruby
 TransactionLogger.log_prefix = "transaction_logger_"
 # {
-#   "transaction_logger_name" => "undefined"
+#   "transaction_logger_name" => "some name"
 #   "transaction_logger_context" => { "user_id" => 1 }
 #   ...
 # }
@@ -101,17 +101,17 @@ The expected output is:
 
 ```json
 {
-  "transaction_name": "ExampleClass.some_method",
-  "transaction_context": {
+  "name": "ExampleClass.some_method",
+  "context": {
     "some_id": 12
   },
-  "transaction_duration": 0.112,
-  "transaction_history": [{
-    "transaction_info": "Trying something complex"
+  "duration": 0.112,
+  "history": [{
+    "info": "Trying something complex"
     }, {
-      "transaction_error_message": "Error",
-      "transaction_error_class": "RuntimeError",
-      "transaction_error_backtrace": [
+      "error_message": "Error",
+      "error_class": "RuntimeError",
+      "error_backtrace": [
         "example.rb:84:in `block in nested_method'",
         ".../TransactionLogger_Example/transaction_logger.rb:26:in `call'",
         ".../TransactionLogger_Example/transaction_logger.rb:26:in `run'",
