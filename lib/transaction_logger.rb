@@ -54,12 +54,22 @@ class TransactionLogger
     @@logger ||= Logger.new(STDOUT)
   end
 
+  # Sets the hash keys on the TransactionLogger's log to have a prefix.
   #
+  # Using .log_prefix "str_", the output of the log hash will contain keys prefixed
+  # with "str_", such as { "str_name" => "Class.method" }.
+  #
+  # @param prefix [#to_s] Any String or Object that responds to to_s
   #
   def self.log_prefix=(prefix)
     @@prefix = "#{prefix}"
   end
 
+  # @private
+  # Returns the log_prefix
+  #
+  # @return [String] The currently stored prefix.
+  #
   def self.log_prefix
     @@prefix
   end
