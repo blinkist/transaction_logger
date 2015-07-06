@@ -9,11 +9,11 @@ Gem::Specification.new do |spec|
   spec.authors       = ["John Donner", "Sebastian Schleicher"]
   spec.email         = ["johnbdonner@gmail.com", "sebastian.julius@gmail.com"]
   spec.summary       = %q{Contextual Business Transaction Logger for Ruby}
-  spec.description   = %q{A logger that silently collects information in the \
-                          background and when an error is raised, logs a hash either \
-                          out to the System or pushes the log to a service such as \
-                          Loggly. The log hash contains information such as the \
-                          backtrace, any logs from calling classes and methods, \
+  spec.description   = %q{A logger that silently collects information in the
+                          background and when an error is raised, logs a hash either
+                          out to the System or pushes the log to a service such as
+                          Loggly. The log hash contains information such as the
+                          backtrace, any logs from calling classes and methods, 
                           and configurable contextual information.}
   spec.homepage      = "https://github.com/blinkist/transaction_logger"
   spec.license       = "MIT"
