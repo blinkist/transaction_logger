@@ -1,95 +1,53 @@
 require "transaction_logger/version"
 require "transaction_logger/transaction"
+require "transaction_logger/transaction_manager"
 
-class TransactionLogger
+module TransactionLogger
+  def self.included(base)
+    base.extend(ClassMethods)
+  end
 
-  @@prefix = ""
-  @@current_transactions = {}
+  module ClassMethods
+    def add_transaction_log(method, options={})
+      old_method = instance_method method
 
-  # Marks the beginning of a "Transaction lambda," which will log an error if the
-  #   containing code raises an error. A lambda instance variable let's you call
-  #   the .log method and access the ".name" and ".context" variables. The start
-  #   method must take a lambda as an argument.
-  #
-  #   Whatever the outer method is, if a value is returned within the Transaction
-  #   lambda it will be returned to the outer method as well.
-  #
-  #   The start method does not catch errors, so if an error is raised, it will simply
-  #   envoke a logging message to be outputted and then raise the error.
-  #
-  #   This also checks which thread is envoking the method in order to make sure the
-  #   logs are thread-safe.
-  #
-  # @param lmbda [Proc]
-  #
-  def self.start(lmbda)
+      define_method method do
+        TransactionManager.start -> (transaction) {
+          transaction.name = method
+          self.class.trap_logger method, transaction
+          old_method.bind(self).call
+        }
+      end
+    end
 
-    active_transaction = get_active_transaction
+    def trap_logger(method, transaction)
+      logger_method = instance_method :logger
 
-    transaction = TransactionLogger::Transaction.new active_transaction, lmbda
-    active_transaction = transaction
+      define_method :logger do
+        @original_logger ||= logger_method.bind(self).call
+        calling_method = caller_locations(1,1)[0].label
 
-    set_active_transaction active_transaction
-
-    begin
-      transaction.run
-    rescue Exception => e
-      raise e
-    ensure
-      set_active_transaction transaction.parent
+        @trapped_logger ||= {}
+        @trapped_logger[calling_method] ||= LoggerProxy.new @original_logger, transaction
+      end
     end
   end
 
-  # Sets the TransactionLogger's output to a specific instance of Logger.
-  #
-  # @param logger [Logger] Any instace of ruby Logger
-  #
-  def self.logger=(logger)
-    @@logger = logger
-  end
+  class LoggerProxy
+    def initialize(original_logger, transaction)
+      @original_logger = original_logger
+      @transaction = transaction
+    end
 
-  # Sets the TransactionLogger's output to a new instance of Logger
-  #
-  def self.logger
-    @@logger ||= Logger.new(STDOUT)
-  end
+    %i( debug info warn error fatal ).each do |level|
+      define_method level do |*args|
+        @original_logger.send level, *args
+        @transaction.log *args
+      end
+    end
 
-  # Sets the hash keys on the TransactionLogger's log to have a prefix.
-  #
-  # Using .log_prefix "str_", the output of the log hash will contain keys prefixed
-  # with "str_", such as { "str_name" => "Class.method" }.
-  #
-  # @param prefix [#to_s] Any String or Object that responds to to_s
-  #
-  def self.log_prefix=(prefix)
-    @@prefix = "#{prefix}"
-  end
-
-  # @private
-  # Returns the log_prefix
-  #
-  # @return [String] The currently stored prefix.
-  #
-  def self.log_prefix
-    @@prefix
-  end
-
-  # @private
-  # Returns the current parent of a thread of Transactions.
-  #
-  # @return [TransactionLogger::Transaction] The current parent given a Thread
-  #
-  def self.get_active_transaction
-    if @@current_transactions.has_key?(Thread.current.object_id)
-      @@current_transactions[Thread.current.object_id]
+    def method_missing(method, *args)
+      @original_logger.send method, *args
     end
   end
-
-  # @private
-  # Sets the current parent of a thread of Transactions.
-  #
-  def self.set_active_transaction(transaction)
-    @@current_transactions[Thread.current.object_id] = transaction
-  end
-
 end
