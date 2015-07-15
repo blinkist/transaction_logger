@@ -44,10 +44,12 @@ module TransactionLogger
       @transaction = transaction
     end
 
-    %i( debug info warn error fatal ).each do |level|
+    levels = %i( debug info warn error fatal )
+
+    levels.each do |level|
       define_method level do |*args|
         @original_logger.send level, *args
-        @transaction.log *args
+        @transaction.log *args, level
       end
     end
 

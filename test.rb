@@ -1,6 +1,8 @@
 require "./lib/transaction_logger.rb"
 require "logger"
 
+TransactionLogger::TransactionManager.log_prefix = "transaction_"
+
 class TestClass
   include TransactionLogger
 
@@ -14,7 +16,7 @@ class TestClass
     another_try
 
     logger.info "Done"
-
+    # logger.error "uh oh"
     raise "Dummy"
   end
 
@@ -45,7 +47,7 @@ class SubTestClass
     logger.info "This shouldn't be in the logs"
     puts "TEST TEST"
 
-    raise "WOOP WOOP"
+    #raise "WOOP WOOP"
   end
 
   def logger

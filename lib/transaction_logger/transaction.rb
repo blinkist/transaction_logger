@@ -1,10 +1,12 @@
 require "json"
+require "byebug"
 
 class TransactionLogger::Transaction
   attr_reader :parent
 
   attr_accessor :name
   attr_accessor :context
+  attr_accessor :level_threshold
 
   # @param parent [TransactionLogger::Transaction] Parent of transaction
   # @param lmbda [Proc] The surrounded block
@@ -17,9 +19,11 @@ class TransactionLogger::Transaction
 
     @name = "undefined"
     @context = {}
+    @level_threshold = :error
     @log_queue = Array.new
     @start = Time.now
     @error_printed = nil
+    @level_threshold_broken = false
   end
 
   # @private
@@ -56,9 +60,10 @@ class TransactionLogger::Transaction
   # @param message [#to_s] Any String or Object that responds to to_s
   #   that you want to be stored in the log queue.
   #
-  def log(message)
+  def log(message, level=:info)
+    check_level(level)
     if message.is_a? String
-      message_key = "#{TransactionLogger::TransactionManager.log_prefix}info"
+      message_key = "#{TransactionLogger::TransactionManager.log_prefix}#{level}"
       message = { message_key => message }
       @log_queue.push message
     else
@@ -111,12 +116,27 @@ class TransactionLogger::Transaction
     output
   end
 
+  # @private
+  #
+  def check_level(level)
+    levels = { debug: 0, info: 1, warn: 2, error: 3, fatal: 4}
+    input_level_id = levels[level]
+    level_threshold_id = levels[@level_threshold]
+
+    @level_threshold_broken = true if input_level_id >= level_threshold_id
+  end
+
 
   private
 
   # Calculates the duration upon the success of a transaction
   def success
     calc_duration
+
+    unless @parent || @error_printed || !@level_threshold_broken
+      print_transactions
+      @error_printed = true
+    end
   end
 
   # Calculates the number of milliseconds that the Transaction has taken
