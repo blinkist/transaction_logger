@@ -13,7 +13,12 @@ module TransactionLogger
 
       define_method method do
         TransactionManager.start -> (transaction) {
-          transaction.name = method
+
+          transaction.name = options[:name]
+          transaction.name ||= "#{old_method.bind(self).owner}#{method.inspect}"
+          transaction.context = options[:context]
+          transaction.context ||= {}
+
           self.class.trap_logger method, transaction
           old_method.bind(self).call
         }

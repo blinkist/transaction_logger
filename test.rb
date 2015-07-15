@@ -33,8 +33,9 @@ class TestClass
     @logger ||= Logger.new STDOUT
   end
 
-  add_transaction_log :run
-  add_transaction_log :another_try
+  context = { user_id: 1, user_account: "premium" }
+  add_transaction_log :run, {name: "MyCustomName", context: context}
+  add_transaction_log :another_try, {context: context}
 end
 
 class SubTestClass
@@ -51,7 +52,7 @@ class SubTestClass
     @logger ||= Logger.new STDOUT
   end
 
-  #add_transaction_log :test
+  add_transaction_log :test
 end
 
 t = TestClass.new
