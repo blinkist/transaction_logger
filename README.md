@@ -3,6 +3,15 @@
 
 Business Transactions Logger for Ruby that compiles contextual logging information and can send it to a configured logging service such as Logger or Loggly in a nested hash.
 
+## Table of Contents
+
+1. [Installation](#installation)
+2. [Output](#output)
+3. [Configuration](#configuration)
+4. [Usage](#usage)
+5. [Version History](#version-history)
+6. [Contributing](#contributing)
+
 ## Installation
 
 Add this line to your application's Gemfile:
