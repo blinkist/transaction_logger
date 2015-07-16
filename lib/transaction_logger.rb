@@ -35,8 +35,8 @@ module TransactionLogger
   #
   # @param logger [Logger] Any instace of ruby Logger
   #
-  def self.logger=(logger)
-    @logger = logger
+  class << self
+    attr_writer :logger
   end
 
   # Sets the TransactionLogger's output to a new instance of Logger
@@ -49,8 +49,8 @@ module TransactionLogger
   #
   # @param level [Symbol] A symbol recognized by logger, such as :warn
   #
-  def self.level_threshold=(level)
-    @level_threshold = level
+  class << self
+    attr_writer :level_threshold
   end
 
   module ClassMethods
@@ -74,9 +74,10 @@ module TransactionLogger
       logger = Module.nesting.last.instance_variable_get :@logger
       level_threshold = Module.nesting.last.instance_variable_get :@level_threshold
 
-      define_method method do
-        TransactionManager.start prefix, logger, level_threshold, -> (transaction) {
+      options = { prefix: prefix, logger: logger, level_threshold: level_threshold }
 
+      define_method method do
+        TransactionManager.start options, lambda  { |transaction|
           transaction.name = options[:name]
           transaction.name ||= "#{old_method.bind(self).owner}#{method.inspect}"
           transaction.context = options[:context]
@@ -94,12 +95,12 @@ module TransactionLogger
     # @param method [Symbol]
     # @param transaction [Transaction]
     #
-    def trap_logger(method, transaction)
+    def trap_logger(_method, transaction)
       logger_method = instance_method :logger
 
       define_method :logger do
         @original_logger ||= logger_method.bind(self).call
-        calling_method = caller_locations(1,1)[0].label
+        calling_method = caller_locations(1, 1)[0].label
 
         @trapped_logger ||= {}
         @trapped_logger[calling_method] ||= LoggerProxy.new @original_logger, transaction
@@ -120,7 +121,7 @@ module TransactionLogger
     levels.each do |level|
       define_method level do |*args|
         @original_logger.send level, *args
-        @transaction.log *args, level
+        @transaction.log(*args, level)
       end
     end
 
