@@ -1,4 +1,5 @@
 require "json"
+require "logger"
 
 class TransactionLogger::Transaction
   attr_reader :parent
@@ -158,8 +159,7 @@ class TransactionLogger::Transaction
   end
 
   # Sends the transaction context and log to an instance of logger
-  def print_transactions(transaction=nil)
-    puts JSON.pretty_generate to_hash
+  def print_transactions
     @logger ||= Logger.new(STDOUT)
     @logger.error to_hash
   end

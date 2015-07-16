@@ -30,8 +30,6 @@ class TransactionLogger::TransactionManager
 
     active_transaction = get_active_transaction
 
-    @@logger ||= Logger.new(STDOUT)
-
     transaction = TransactionLogger::Transaction.new active_transaction, prefix, logger, level_threshold, lmbda
     active_transaction = transaction
 
