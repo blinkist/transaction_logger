@@ -21,13 +21,18 @@ class TransactionLogger::TransactionManager
   #   This also checks which thread is envoking the method in order to make sure the
   #   logs are thread-safe.
   #
+  # @param prefix [String]
+  # @param logger [Logger]
+  # @param level_threshold [Symbol]
   # @param lmbda [Proc]
   #
-  def self.start(lmbda)
+  def self.start(prefix, logger, level_threshold, lmbda)
 
     active_transaction = get_active_transaction
 
-    transaction = TransactionLogger::Transaction.new active_transaction, lmbda
+    @@logger ||= Logger.new(STDOUT)
+
+    transaction = TransactionLogger::Transaction.new active_transaction, prefix, logger, level_threshold, lmbda
     active_transaction = transaction
 
     set_active_transaction active_transaction
@@ -39,40 +44,6 @@ class TransactionLogger::TransactionManager
     ensure
       set_active_transaction transaction.parent
     end
-  end
-
-  # Sets the TransactionLogger's output to a specific instance of Logger.
-  #
-  # @param logger [Logger] Any instace of ruby Logger
-  #
-  def self.logger=(logger)
-    @@logger = logger
-  end
-
-  # Sets the TransactionLogger's output to a new instance of Logger
-  #
-  def self.logger
-    @@logger ||= Logger.new(STDOUT)
-  end
-
-  # Sets the hash keys on the TransactionLogger's log to have a prefix.
-  #
-  # Using .log_prefix "str_", the output of the log hash will contain keys prefixed
-  # with "str_", such as { "str_name" => "Class.method" }.
-  #
-  # @param prefix [#to_s] Any String or Object that responds to to_s
-  #
-  def self.log_prefix=(prefix)
-    @@prefix = "#{prefix}"
-  end
-
-  # @private
-  # Returns the log_prefix
-  #
-  # @return [String] The currently stored prefix.
-  #
-  def self.log_prefix
-    @@prefix
   end
 
   # @private

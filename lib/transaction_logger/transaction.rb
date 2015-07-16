@@ -1,5 +1,4 @@
 require "json"
-require "byebug"
 
 class TransactionLogger::Transaction
   attr_reader :parent
@@ -7,23 +6,27 @@ class TransactionLogger::Transaction
   attr_accessor :name
   attr_accessor :context
   attr_accessor :level_threshold
+  attr_accessor :level_threshold_broken
 
   # @param parent [TransactionLogger::Transaction] Parent of transaction
   # @param lmbda [Proc] The surrounded block
   #
-  def initialize(parent=nil, lmbda)
+  def initialize(parent=nil, log_prefix, logger, level_threshold, lmbda)
     @parent = parent
     @parent.log self if @parent
 
     @lmbda = lmbda
 
+    @log_prefix = log_prefix
     @name = "undefined"
     @context = {}
-    @level_threshold = :error
+    @level_threshold = level_threshold || :error
     @log_queue = Array.new
     @start = Time.now
     @error_printed = nil
     @level_threshold_broken = false
+
+    @logger = logger
   end
 
   # @private
@@ -34,14 +37,14 @@ class TransactionLogger::Transaction
       result = @lmbda.call self
     rescue => error
 
-      e_message_key = "#{TransactionLogger::TransactionManager.log_prefix}error_message"
-      e_class_key = "#{TransactionLogger::TransactionManager.log_prefix}error_class"
-      e_backtrace_key = "#{TransactionLogger::TransactionManager.log_prefix}error_backtrace"
+      e_message_key = "#{@log_prefix}error_message"
+      e_class_key = "#{@log_prefix}error_class"
+      e_backtrace_key = "#{@log_prefix}error_backtrace"
 
       log({
         e_message_key => error.message,
         e_class_key => error.class.name,
-        e_backtrace_key => error.backtrace.take(5)
+        e_backtrace_key => error.backtrace.take(10)
       })
 
       failure error, self
@@ -63,7 +66,7 @@ class TransactionLogger::Transaction
   def log(message, level=:info)
     check_level(level)
     if message.is_a? String
-      message_key = "#{TransactionLogger::TransactionManager.log_prefix}#{level}"
+      message_key = "#{@log_prefix}#{level}"
       message = { message_key => message }
       @log_queue.push message
     else
@@ -91,10 +94,10 @@ class TransactionLogger::Transaction
   # @private
   # Converts a Transaction and it's children into a single nested hash
   def to_hash
-    name_key = "#{TransactionLogger::TransactionManager.log_prefix}name"
-    context_key = "#{TransactionLogger::TransactionManager.log_prefix}context"
-    duration_key = "#{TransactionLogger::TransactionManager.log_prefix}duration"
-    history_key = "#{TransactionLogger::TransactionManager.log_prefix}history"
+    name_key = "#{@log_prefix}name"
+    context_key = "#{@log_prefix}context"
+    duration_key = "#{@log_prefix}duration"
+    history_key = "#{@log_prefix}history"
 
     output = {
       name_key => @name,
@@ -122,8 +125,11 @@ class TransactionLogger::Transaction
     levels = { debug: 0, info: 1, warn: 2, error: 3, fatal: 4}
     input_level_id = levels[level]
     level_threshold_id = levels[@level_threshold]
-
-    @level_threshold_broken = true if input_level_id >= level_threshold_id
+    if level_threshold_id
+      @level_threshold_broken = true if input_level_id >= level_threshold_id
+    else
+      @level_threshold_broken = true if input_level_id >= 3
+    end
   end
 
 
@@ -133,10 +139,17 @@ class TransactionLogger::Transaction
   def success
     calc_duration
 
-    unless @parent || @error_printed || !@level_threshold_broken
-      print_transactions
-      @error_printed = true
+    unless @error_printed || !@level_threshold_broken
+      if @parent
+        @parent.instance_variable_set :@level_threshold_broken, true
+      else
+        print_transactions
+        @error_printed = true
+      end
     end
+
+    #unless @parent || @error_printed || !@level_threshold_broken
+    #end
   end
 
   # Calculates the number of milliseconds that the Transaction has taken
@@ -147,7 +160,8 @@ class TransactionLogger::Transaction
   # Sends the transaction context and log to an instance of logger
   def print_transactions(transaction=nil)
     puts JSON.pretty_generate to_hash
-    TransactionLogger::TransactionManager.logger.error to_hash
+    @logger ||= Logger.new(STDOUT)
+    @logger.error to_hash
   end
 
 end

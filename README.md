@@ -1,5 +1,5 @@
 # Blinkist TransactionLogger
-[ ![Codeship Status for blinkist/transaction_logger](https://codeship.com/projects/fb9745c0-edc7-0132-b6b1-1efd3f886df2/status?branch=master)](https://codeship.com/projects/84119) [![Code Climate](https://codeclimate.com/github/blinkist/transaction_logger/badges/gpa.svg)](https://codeclimate.com/github/blinkist/transaction_logger) [![Dependency Status](https://www.versioneye.com/ruby/transaction_logger/badge.svg)](https://www.versioneye.com/ruby/transaction_logger/)
+[ ![Codeship Status for blinkist/transaction_logger](https://codeship.com/projects/fb9745c0-edc7-0132-b6b1-1efd3f886df2/status?branch=master)](https://codeship.com/projects/84119) [![Gem Version](https://badge.fury.io/rb/transaction_logger.svg)](http://badge.fury.io/rb/transaction_logger) [![Code Climate](https://codeclimate.com/github/blinkist/transaction_logger/badges/gpa.svg)](https://codeclimate.com/github/blinkist/transaction_logger) [![Dependency Status](https://www.versioneye.com/ruby/transaction_logger/badge.svg)](https://www.versioneye.com/ruby/transaction_logger/)
 
 Business Transactions Logger for Ruby that compiles contextual logging information and can send it to a configured logging service such as Logger or Loggly in a nested hash.
 
@@ -21,11 +21,13 @@ Or install it yourself as:
 
 ## Output
 
-Given a root transaction, the TransactionLogger is expected to print out every log that occurred under this root transaction, and each sub-transaction's local information.
+By registering a method with TransactionLogger, the TransactionLogger is expected to print out every log that occurred under this method, and each nested method's local information as well.
 
 When a transaction raises an error, it will log the *error message*, *error class*, and *10 lines* of the backtrace by default. This will be logged at the level of the transaction that raised the error.
 
-## Usage
+Additionally, if no errors are raised, but an *error* or *fatal* log is made, then the TransactionLogger will send it's log hash to the configured logger.
+
+## Configuration
 
 Configure the logger by calling TransactionLogger.logger, such as with Ruby's Logger:
 
@@ -36,10 +38,13 @@ TransactionLogger.logger = logger
 
 Calling Transaction_Logger.logger with no parameter sets the logger to a new instance of Logger as shown above.
 
+### Configuring the Prefix
+
 You can add a prefix to every hash key in the log by using the class method log_prefix:
 
 ```ruby
 TransactionLogger.log_prefix = "transaction_logger_"
+# output hash:
 # {
 #   "transaction_logger_name" => "some name"
 #   "transaction_logger_context" => { "user_id" => 1 }
@@ -47,22 +52,35 @@ TransactionLogger.log_prefix = "transaction_logger_"
 # }
 ```
 
-Wrap a business transaction method with a TransactionLogger lambda:
+### Configuring the Log Level Threshold
+
+You may also choose at which log level the TransactionLogger sends it's log hash. By default, *error* is the threshold, so that if an *error* or *fatal* log is made, then the TransactionLogger will send a JSON hash to it's configured logger. If you wish to set the threshold to *warn*, you can configure the TransactionLogger to do so:
 
 ```ruby
-def some_method
-  TransactionLogger.start -> (t) do
-    # your code.
+TransactionLogger.level_threshold = :warn
+```
+
+## Usage
+
+To register a method as a transaction, include the TransactionLogger and use *add_transaction_log* after the method definition:
+
+```ruby
+class YourClass
+  include TransactionLogger
+
+  def some_method
+    logger.info "logged message"
+    # method code
   end
+
+  add_transaction_log :some_method
 end
 ```
 
-From within this lambda, you may call upon t to add a custom name, context and log your messages, like so:
+By default, the transaction will be named *YourClass:some_method*, and have no context. You can easily change this by adding the following symbols to an additional options parameter:
 
 ```ruby
-t.name = "YourClass.some_method"
-t.context = { specific: "context: #{value}" }
-t.log "A message you want logged"
+add_transaction_log :some_method, {name: "Custom Name", context: {}}
 ```
 
 ### Example
@@ -70,30 +88,27 @@ t.log "A message you want logged"
 Initial setup, in a config file:
 
 ```ruby
-# Sets output to new instance of Logger
-TransactionLogger.logger
+logger = Logger.new STDOUT
 
-# Sets the prefix of each hash key in the log to "transaction_"
-#   eg. An error message has key: "transaction_error_message"
-TransactionLogger.log_prefix = "transaction_"
+# Sets output to the new Logger
+TransactionLogger.logger = logger
 ```
 
 Here is a transaction that raises an error:
 
 ```ruby
 class ExampleClass
-  def some_method
-    TransactionLogger.start -> (t) do
-      t.name = "ExampleClass.some_method"
-      t.context = { some_id: 12 }
+  def some_method(result)
+    include TransactionLogger
 
-      t.log "Trying something complex"
-      raise RuntimeError, "Error"
+    logger.info "Trying something complex"
+    raise RuntimeError, "Error"
 
-      result
-      t.log "Success"
-    end
+    result
+    logger.info "Success"
   end
+
+  add_transaction_log :some_method, {context: {some_id: 12}}
 end
 ```
 
@@ -101,7 +116,7 @@ The expected output is:
 
 ```json
 {
-  "name": "ExampleClass.some_method",
+  "name": "ExampleClass:some_method",
   "context": {
     "some_id": 12
   },
@@ -112,16 +127,35 @@ The expected output is:
       "error_message": "Error",
       "error_class": "RuntimeError",
       "error_backtrace": [
-        "example.rb:84:in `block in nested_method'",
-        ".../TransactionLogger_Example/transaction_logger.rb:26:in `call'",
-        ".../TransactionLogger_Example/transaction_logger.rb:26:in `run'",
-        ".../TransactionLogger_Example/transaction_logger.rb:111:in `start'",
-        "example.rb:79:in `nested_method'"
+        "example_class.rb:6:in `some_method'",
+        ".../transaction_logger.rb:86:in `call'",
+        ".../transaction_logger.rb:86:in `block (2 levels) in add_transaction_log'",
+        ".../transaction_logger/transaction.rb:37:in `call'",
+        ".../transaction_logger/transaction.rb:37:in `run'",
+        ".../transaction_logger/transaction_manager.rb:41:in `start'",
+        ".../transaction_logger.rb:78:in `block in add_transaction_log'",
+        "test.rb:4:in `<main>'"
       ]
 
   }]
 }
 ```
+
+## Version History
+
+### v1.0.0
+
+- AOP approach that provides a much cleaner, easier implementation of the TransactionLogger
+- Added default transaction name
+- Added support for log level threshold
+
+### v0.1.0
+
+- Added support for log prefixes
+
+### v0.0.1
+
+- initial version
 
 ## Contributing
 
