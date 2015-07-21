@@ -47,7 +47,6 @@ describe TransactionLogger do
   end
 
   describe TransactionLogger::Configure do
-
     describe ".log_prefix" do
       context "when there is no prefix" do
         it "does not change the output" do
