@@ -42,7 +42,7 @@ module TransactionLogger
 
           # Check for a logger on the instance
           if self.methods.include? :logger
-            logger_method = self.class.instance_method :logger
+            logger_method = self.method(:logger).unbind
           # Check for a logger on the class
           elsif self.class.methods.include? :logger
             logger_method = self.class.method :logger
