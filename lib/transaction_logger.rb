@@ -41,8 +41,8 @@ module TransactionLogger
           transaction.context ||= {}
 
           # Check for a logger on the instance
-          if self.methods.include? :logger
-            logger_method = self.method(:logger).unbind
+          if methods.include? :logger
+            logger_method = method(:logger).unbind
           # Check for a logger on the class
           elsif self.class.methods.include? :logger
             logger_method = self.class.method :logger
