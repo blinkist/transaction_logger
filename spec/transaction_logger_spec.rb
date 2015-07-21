@@ -3,9 +3,76 @@ require "logger"
 
 describe TransactionLogger do
   let (:test_lmbda) {
-    lambda  do |_t|
+    lambda do |_t|
     end
   }
+
+  context "Logger trapping" do
+    let(:instance_logger) {
+      Class.new do
+        include TransactionLogger
+
+        def do_something
+          logger.info "TEST"
+        end
+
+        def logger
+          Logger.new STDOUT
+        end
+
+        add_transaction_log :do_something
+      end
+    }
+
+    let(:klass_logger) {
+      Class.new do
+        include TransactionLogger
+
+        def do_something
+          self.class.logger.info "TEST"
+        end
+
+        def self.logger
+          Logger.new STDOUT
+        end
+
+        add_transaction_log :do_something
+      end
+    }
+
+    let(:no_logger) {
+      Class.new do
+        include TransactionLogger
+
+        def do_something
+          puts "TEST"
+        end
+
+        add_transaction_log :do_something
+      end
+    }
+
+    it "supports #logger" do
+      expect_any_instance_of(TransactionLogger::LoggerProxy).to receive(:info).and_call_original
+      expect_any_instance_of(Logger).to receive(:info).and_call_original
+      test = instance_logger.new
+      test.do_something
+    end
+
+    it "supports .logger" do
+      expect_any_instance_of(TransactionLogger::LoggerProxy).to receive(:info).and_call_original
+      expect_any_instance_of(Logger).to receive(:info).and_call_original
+      test = klass_logger.new
+      test.do_something
+    end
+
+    it "supports no logger" do
+      expect_any_instance_of(TransactionLogger::LoggerProxy).to_not receive(:info)
+      expect_any_instance_of(Logger).to_not receive(:info)
+      test = no_logger.new
+      test.do_something
+    end
+  end
 
   subject {
     TransactionLogger::Transaction.new(
