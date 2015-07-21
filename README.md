@@ -42,7 +42,7 @@ Configure the logger by calling TransactionLogger.logger, such as with Ruby's Lo
 
 ```ruby
 logger = Logger.new STDOUT # Ruby default logger setup
-TransactionLogger.logger = logger
+TransactionLogger::Configure.logger = logger
 ```
 
 Calling Transaction_Logger.logger with no parameter sets the logger to a new instance of Logger as shown above.
@@ -52,7 +52,7 @@ Calling Transaction_Logger.logger with no parameter sets the logger to a new ins
 You can add a prefix to every hash key in the log by using the class method log_prefix:
 
 ```ruby
-TransactionLogger.log_prefix = "transaction_logger_"
+TransactionLogger::Configure.log_prefix = "transaction_logger_"
 # output hash:
 # {
 #   "transaction_logger_name" => "some name"
@@ -66,7 +66,7 @@ TransactionLogger.log_prefix = "transaction_logger_"
 You may also choose at which log level the TransactionLogger sends it's log hash. By default, *error* is the threshold, so that if an *error* or *fatal* log is made, then the TransactionLogger will send a JSON hash to it's configured logger. If you wish to set the threshold to *warn*, you can configure the TransactionLogger to do so:
 
 ```ruby
-TransactionLogger.level_threshold = :warn
+TransactionLogger::Configure.level_threshold = :warn
 ```
 
 ## Usage
@@ -94,16 +94,7 @@ add_transaction_log :some_method, {name: "Custom Name", context: {}}
 
 ### Example
 
-Initial setup, in a config file:
-
-```ruby
-logger = Logger.new STDOUT
-
-# Sets output to the new Logger
-TransactionLogger.logger = logger
-```
-
-Here is a transaction that raises an error:
+Assuming there is already an instance of Ruby's Logger class, here is a transaction that raises an error:
 
 ```ruby
 class ExampleClass
@@ -151,6 +142,11 @@ The expected output is:
 ```
 
 ## Version History
+
+### v1.0.1
+- Fixed issues with undefined trap_logger method
+- Hid module methods other than add_transaction_log
+- TransactionLogger configuration updated
 
 ### v1.0.0
 

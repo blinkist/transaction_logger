@@ -5,52 +5,10 @@ require "transaction_logger/transaction_manager"
 module TransactionLogger
 
   # @private
-  # Extends ClassMethods of including class to the TransactionLogger
+  # Includes ClassMethods of including class to the TransactionLogger
   #
   def self.included(base)
-    base.extend(ClassMethods)
-  end
-
-  # Sets the hash keys on the TransactionLogger's log to have a prefix.
-  #
-  # Using .log_prefix "str_", the output of the log hash will contain keys
-  # prefixed with "str_", such as { "str_name" => "Class.method" }.
-  #
-  # @param prefix [#to_s] Any String or Object that responds to to_s
-  #
-  def self.log_prefix=(prefix)
-    @prefix = "#{prefix}"
-  end
-
-  # @private
-  # Returns the log_prefix
-  #
-  # @return [String] The currently stored prefix.
-  #
-  def self.log_prefix
-    @prefix
-  end
-
-  # Sets the TransactionLogger's output to a specific instance of Logger.
-  #
-  # @param logger [Logger] Any instace of ruby Logger
-  #
-  class << self
-    attr_writer :logger
-  end
-
-  # Sets the TransactionLogger's output to a new instance of Logger
-  #
-  def self.logger
-    @logger ||= Logger.new(STDOUT)
-  end
-
-  # Sets the TransactionLogger's logger level threshold.
-  #
-  # @param level [Symbol] A symbol recognized by logger, such as :warn
-  #
-  class << self
-    attr_writer :level_threshold
+    base.extend ClassMethods
   end
 
   module ClassMethods
@@ -70,11 +28,10 @@ module TransactionLogger
     def add_transaction_log(method, options={})
       old_method = instance_method method
 
-      prefix = Module.nesting.last.instance_variable_get :@prefix
-      logger = Module.nesting.last.instance_variable_get :@logger
-      level_threshold = Module.nesting.last.instance_variable_get :@level_threshold
-
-      options = { prefix: prefix, logger: logger, level_threshold: level_threshold }
+      options = {}
+      options[:prefix] = TransactionLogger::Configure.instance_variable_get :@prefix
+      options[:logger] = TransactionLogger::Configure.instance_variable_get :@logger
+      options[:level_threshold] = TransactionLogger::Configure.instance_variable_get :@level_threshold
 
       define_method method do
         TransactionManager.start options, lambda  { |transaction|
@@ -83,28 +40,82 @@ module TransactionLogger
           transaction.context = options[:context]
           transaction.context ||= {}
 
-          self.class.trap_logger method, transaction
+          method_info = {}
+          method_info[:logger_method] = self.class.instance_method :logger
+          method_info[:calling_method] = caller_locations(1, 1)[0].label
+          method_info[:includer] = self
+
+          TransactionLogger::Helper.trap_logger method, transaction, method_info
           old_method.bind(self).call
         }
       end
     end
 
+  end
+
+  class Helper
     # @private
     # Traps the original logger inside the TransactionLogger
     #
     # @param method [Symbol]
     # @param transaction [Transaction]
     #
-    def trap_logger(_method, transaction)
-      logger_method = instance_method :logger
+    def self.trap_logger(_method, transaction, method_info={})
+      logger_method = method_info[:logger_method]
+      calling_method = method_info[:calling_method]
+      includer = method_info[:includer]
 
-      define_method :logger do
-        @original_logger ||= logger_method.bind(self).call
-        calling_method = caller_locations(1, 1)[0].label
+      includer.class.send :define_method, :logger, lambda {
+        @original_logger ||= logger_method.bind(includer).call
 
         @trapped_logger ||= {}
         @trapped_logger[calling_method] ||= LoggerProxy.new @original_logger, transaction
-      end
+      }
+    end
+
+  end
+
+  class Configure
+    # Sets the hash keys on the TransactionLogger's log to have a prefix.
+    #
+    # Using .log_prefix "str_", the output of the log hash will contain keys
+    # prefixed with "str_", such as { "str_name" => "Class.method" }.
+    #
+    # @param prefix [#to_s] Any String or Object that responds to to_s
+    #
+    def self.log_prefix=(prefix)
+      @prefix = prefix
+    end
+
+    # @private
+    # Returns the log_prefix
+    #
+    # @return [String] The currently stored prefix.
+    #
+    def self.log_prefix
+      @prefix
+    end
+
+    # Sets the TransactionLogger's output to a specific instance of Logger.
+    #
+    # @param logger [Logger] Any instace of ruby Logger
+    #
+    class << self
+      attr_writer :logger
+    end
+
+    # Sets the TransactionLogger's output to a new instance of Logger
+    #
+    def self.logger
+      @logger ||= Logger.new(STDOUT)
+    end
+
+    # Sets the TransactionLogger's logger level threshold.
+    #
+    # @param level [Symbol] A symbol recognized by logger, such as :warn
+    #
+    class << self
+      attr_writer :level_threshold
     end
   end
 
