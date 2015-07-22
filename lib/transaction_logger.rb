@@ -40,12 +40,24 @@ module TransactionLogger
           transaction.context = options[:context]
           transaction.context ||= {}
 
-          method_info = {}
-          method_info[:logger_method] = self.class.instance_method :logger
-          method_info[:calling_method] = caller_locations(1, 1)[0].label
-          method_info[:includer] = self
+          # Check for a logger on the instance
+          if methods.include? :logger
+            logger_method = method(:logger).unbind
+          # Check for a logger on the class
+          elsif self.class.methods.include? :logger
+            logger_method = self.class.method :logger
+          end
 
-          TransactionLogger::Helper.trap_logger method, transaction, method_info
+          # Trap the logger if we've found one
+          if logger_method
+            method_info = {}
+            method_info[:logger_method] = logger_method
+            method_info[:calling_method] = caller_locations(1, 1)[0].label
+            method_info[:includer] = self
+
+            TransactionLogger::Helper.trap_logger method, transaction, method_info
+          end
+
           old_method.bind(self).call
         }
       end
@@ -65,8 +77,18 @@ module TransactionLogger
       calling_method = method_info[:calling_method]
       includer = method_info[:includer]
 
-      includer.class.send :define_method, :logger, lambda {
-        @original_logger ||= logger_method.bind(includer).call
+      if logger_method.is_a? UnboundMethod
+        method_type = :define_method
+      else
+        method_type = :define_singleton_method
+      end
+
+      includer.class.send method_type, :logger, lambda {
+        if logger_method.is_a? UnboundMethod
+          @original_logger ||= logger_method.bind(includer).call
+        else
+          @original_logger ||= logger_method.call
+        end
 
         @trapped_logger ||= {}
         @trapped_logger[calling_method] ||= LoggerProxy.new @original_logger, transaction
