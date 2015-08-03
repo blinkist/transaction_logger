@@ -86,10 +86,19 @@ class YourClass
 end
 ```
 
-By default, the transaction will be named *YourClass:some_method*, and have no context. You can easily change this by adding the following symbols to an additional options parameter:
+By default, the transaction will be named *YourClass:some_method*. You can easily change this by adding the name to the options params:
 
 ```ruby
-add_transaction_log :some_method, {name: "Custom Name", context: {}}
+add_transaction_log :some_method, {name: "Custom Name" }
+```
+
+You can set a *context* to the options that is pushed to the logger. It can either anything supporting `.to_hash` or a `Proc`.
+The proc will be evaluated in the scope of the traced method.
+
+```ruby
+add_transaction_log :some_method, {context: "Custom Context" }
+add_transaction_log :some_method, {context: { key: "value context" } }
+add_transaction_log :some_method, {context: -> { request.params } }
 ```
 
 ### Example
@@ -108,7 +117,7 @@ class ExampleClass
     logger.info "Success"
   end
 
-  add_transaction_log :some_method, {context: {some_id: 12}}
+  add_transaction_log :some_method, { context: { some_id: 12 } }
 end
 ```
 
@@ -142,6 +151,10 @@ The expected output is:
 ```
 
 ## Version History
+
+### v1.1.0
+- Fixed issues #32 for missing context
+- Added support for Proc as context #34
 
 ### v1.0.1
 - Fixed issues with undefined trap_logger method
