@@ -33,11 +33,23 @@ module TransactionLogger
       options[:level_threshold] = TransactionLogger::Configure.instance_variable_get :@level_threshold
 
       define_method method do
+        context = options[:context]
+
+        if context.is_a? Proc
+          begin
+            context = instance_exec(&context)
+          rescue => e
+            context = "TransactionLogger: couldn't evaluate context: #{e.message}"
+            # Write an error to the untrapped logger
+            logger.error context
+            logger.error e.backtrace.take(10).join "\n"
+          end
+        end
+
         TransactionManager.start options, lambda  { |transaction|
           transaction.name = options[:name]
           transaction.name ||= "#{old_method.bind(self).owner}#{method.inspect}"
-          transaction.context = options[:context]
-          transaction.context ||= {}
+          transaction.context = context || {}
 
           # Check for a logger on the instance
           if methods.include? :logger

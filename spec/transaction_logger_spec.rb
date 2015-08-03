@@ -106,6 +106,40 @@ describe TransactionLogger do
     end
   end
 
+  context "Dynamic context" do
+    let(:instance_logger_lambda) {
+      Class.new do
+        include TransactionLogger
+
+        def do_something
+          logger.info "TEST"
+        end
+
+        def dynamic_context
+          "Dynamic Context"
+        end
+
+        def logger
+          Logger.new STDOUT
+        end
+
+        add_transaction_log :do_something, context: -> { dynamic_context }
+      end
+    }
+
+    it "executes the lambda bound to the logged instance" do
+      test = instance_logger_lambda.new
+      expect(test).to receive(:dynamic_context).and_call_original
+      test.do_something
+    end
+
+    it "doesn't fail the method execution if the lambda eval fails" do
+      test = instance_logger_lambda.new
+      allow(test).to receive(:dynamic_context).and_raise "Some error"
+      expect { test.do_something }.to_not raise_error
+    end
+  end
+
   subject {
     TransactionLogger::Transaction.new(
       { prefix: nil, logger: Logger.new(STDOUT), level_threshold: nil }, test_lmbda)
