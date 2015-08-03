@@ -153,8 +153,8 @@ The expected output is:
 ## Version History
 
 ### v1.1.0
-- Fixed issues #32 for missing context
-- Added support for Proc as context #34
+- Fixed issues [#32](https://github.com/blinkist/transaction_logger/issues/32) for missing context
+- Added support for Proc as context [#34](https://github.com/blinkist/transaction_logger/issues/34)
 
 ### v1.0.1
 - Fixed issues with undefined trap_logger method
