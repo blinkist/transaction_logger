@@ -28,7 +28,6 @@ module TransactionLogger
     def add_transaction_log(method, options={})
       old_method = instance_method method
 
-      options = {}
       options[:prefix] = TransactionLogger::Configure.instance_variable_get :@prefix
       options[:logger] = TransactionLogger::Configure.instance_variable_get :@logger
       options[:level_threshold] = TransactionLogger::Configure.instance_variable_get :@level_threshold

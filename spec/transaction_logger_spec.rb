@@ -74,6 +74,38 @@ describe TransactionLogger do
     end
   end
 
+  context "logging options" do
+    let(:logger_stub) { double(Logger) }
+
+    let(:test_logger) {
+      Class.new do
+        include TransactionLogger
+
+        def do_something
+          raise "Error"
+        end
+
+        def logger
+          Logger.new STDOUT
+        end
+
+        add_transaction_log :do_something, name: "my name", context: "my context"
+      end
+    }
+
+    it "sets transaction name and context" do
+      TransactionLogger::Configure.logger = logger_stub
+
+      expect(logger_stub).to receive(:error) do |msg|
+        expect(msg["context"]).to eq "my context"
+        expect(msg["name"]).to eq "my name"
+      end
+
+      test = test_logger.new
+      expect { test.do_something }.to raise_error "Error"
+    end
+  end
+
   subject {
     TransactionLogger::Transaction.new(
       { prefix: nil, logger: Logger.new(STDOUT), level_threshold: nil }, test_lmbda)
@@ -111,76 +143,5 @@ describe TransactionLogger do
         t.log ""
       end
     }
-  end
-
-  describe TransactionLogger::Configure do
-    describe ".log_prefix" do
-      context "when there is no prefix" do
-        it "does not change the output" do
-          expect(subject.to_hash).to include("name" => "undefined")
-        end
-      end
-
-      context "when a prefix is defined" do
-        let (:prefix) { "bta_" }
-
-        before :example do
-          described_class.log_prefix = prefix
-        end
-
-        subject {
-          TransactionLogger::Transaction.new(
-            { prefix: described_class.log_prefix, logger: Logger.new(STDOUT), level_threshold: nil }, test_lmbda)
-        }
-
-        after :example do
-          described_class.log_prefix = ""
-        end
-
-        it "adds the prefix to every key" do
-          expect(subject.to_hash).to include("bta_name" => "undefined")
-        end
-      end
-    end
-  end
-
-  describe "#run" do
-    context "when no exception is raised" do
-      let (:test_lmbda) {
-        lambda  do |_t|
-          "result"
-        end
-      }
-
-      let (:result) { subject.run }
-
-      it "returns lmda" do
-        expect(result).to eq "result"
-      end
-    end
-
-    context "when an exception is raised" do
-      let (:test_lmbda) {
-        lambda  do |_t|
-          fail "test error"
-        end
-      }
-
-      let (:child) {
-        TransactionLogger::Transaction.new(
-          { prefix: nil, logger: Logger.new(STDOUT), level_threshold: nil }, test_lmbda)
-      }
-
-      let (:result) { subject.run }
-
-      it "raises an exception" do
-        expect { result }.to raise_error "test error"
-      end
-
-      it "calls failure" do
-        expect(subject).to receive(:failure)
-        result
-      end
-    end
   end
 end
