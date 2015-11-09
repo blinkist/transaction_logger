@@ -32,7 +32,7 @@ module TransactionLogger
       options[:logger] = TransactionLogger::Configure.instance_variable_get :@logger
       options[:level_threshold] = TransactionLogger::Configure.instance_variable_get :@level_threshold
 
-      define_method method do
+      define_method method do |*params|
         context = options[:context]
 
         if context.is_a? Proc
@@ -69,7 +69,7 @@ module TransactionLogger
             TransactionLogger::Helper.trap_logger method, transaction, method_info
           end
 
-          old_method.bind(self).call
+          old_method.bind(self).call *params
         }
       end
     end

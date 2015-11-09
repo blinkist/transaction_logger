@@ -12,8 +12,8 @@ describe TransactionLogger do
       Class.new do
         include TransactionLogger
 
-        def do_something
-          logger.info "TEST"
+        def do_something(var)
+          logger.info var
         end
 
         def logger
@@ -28,8 +28,8 @@ describe TransactionLogger do
       Class.new do
         include TransactionLogger
 
-        def do_something
-          self.class.logger.info "TEST"
+        def do_something(var)
+          self.class.logger.info var
         end
 
         def self.logger
@@ -44,8 +44,8 @@ describe TransactionLogger do
       Class.new do
         include TransactionLogger
 
-        def do_something
-          puts "TEST"
+        def do_something(var)
+          puts var
         end
 
         add_transaction_log :do_something
@@ -56,21 +56,21 @@ describe TransactionLogger do
       expect_any_instance_of(TransactionLogger::LoggerProxy).to receive(:info).and_call_original
       expect_any_instance_of(Logger).to receive(:info).and_call_original
       test = instance_logger.new
-      test.do_something
+      test.do_something "value"
     end
 
     it "supports .logger" do
       expect_any_instance_of(TransactionLogger::LoggerProxy).to receive(:info).and_call_original
       expect_any_instance_of(Logger).to receive(:info).and_call_original
       test = klass_logger.new
-      test.do_something
+      test.do_something "value"
     end
 
     it "supports no logger" do
       expect_any_instance_of(TransactionLogger::LoggerProxy).to_not receive(:info)
       expect_any_instance_of(Logger).to_not receive(:info)
       test = no_logger.new
-      test.do_something
+      test.do_something "value"
     end
   end
 
