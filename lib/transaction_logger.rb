@@ -69,7 +69,7 @@ module TransactionLogger
             TransactionLogger::Helper.trap_logger method, transaction, method_info
           end
 
-          old_method.bind(self).call *params
+          old_method.bind(self).call(*params)
         }
       end
     end
