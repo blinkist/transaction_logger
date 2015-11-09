@@ -170,12 +170,4 @@ describe TransactionLogger do
       expect(test_parent_log_queue).to include(child)
     end
   end
-
-  describe ".start" do
-    let (:test_lmbda) {
-      described_class.start lambda (t) do
-        t.log ""
-      end
-    }
-  end
 end
