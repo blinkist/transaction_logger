@@ -46,7 +46,7 @@ module TransactionLogger
           end
         end
 
-        TransactionManager.start options, lambda  { |transaction|
+        TransactionManager.start options, lambda { |transaction|
           transaction.name = options[:name]
           transaction.name ||= "#{old_method.bind(self).owner}#{method.inspect}"
           transaction.context = context || {}

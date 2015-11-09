@@ -15,7 +15,7 @@ describe TransactionLogger::Transaction do
   describe "#run" do
     context "when no exception is raised" do
       let (:test_lmbda) {
-        lambda  do |_t|
+        lambda do |_t|
           "result"
         end
       }
@@ -29,7 +29,7 @@ describe TransactionLogger::Transaction do
 
     context "when an exception is raised" do
       let (:test_lmbda) {
-        lambda  do |_t|
+        lambda do |_t|
           fail "test error"
         end
       }
